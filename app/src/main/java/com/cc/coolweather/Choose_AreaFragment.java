@@ -1,8 +1,10 @@
 package com.cc.coolweather;
 
 import android.app.ProgressDialog;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -29,9 +31,6 @@ import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Response;
 
-import static android.R.attr.progress;
-import static android.R.attr.type;
-
 
 /**
  * A simple {@link Fragment} subclass.
@@ -44,8 +43,8 @@ import static android.R.attr.type;
 public class Choose_AreaFragment extends Fragment {
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-    private static final int LEVEL_PROVINCE = 0;
-    private static final int LEVEL_CITY = 1;
+    public static final int LEVEL_PROVINCE = 0;
+    public static final int LEVEL_CITY = 1;
     public static final int LEVEL_COUNTY = 2;
     private ProgressDialog progressDialog;
     private TextView titleText;
@@ -115,6 +114,14 @@ public class Choose_AreaFragment extends Fragment {
                 {
                     SelectedCity=cityList.get(position);
                     queryCounties();
+                } else if(currentLevel==LEVEL_COUNTY)
+                {
+                    String weatherId=countyList.get(position).getWeatherId();
+                    Intent intent=new Intent(getActivity(),WeatherActivity.class);
+                    //Log.d("Choose_AreaFragment",weatherId);
+                    intent.putExtra("weather_id",weatherId);
+                    startActivity(intent);
+                    getActivity().finish();
                 }
             }
         });
@@ -132,12 +139,12 @@ public class Choose_AreaFragment extends Fragment {
 
             }
         });
+        queryProvinces();//程序从这里开始加载省级数据
     }
 
     /**
      * 查询全国所有省，优先从数据库查询，如果没有查询到再去服务器上查询
      */
-
     private void queryProvinces() {
         titleText.setText("中国");
         backButton.setVisibility(View.GONE);
@@ -211,12 +218,12 @@ public class Choose_AreaFragment extends Fragment {
     /**
      *根据传入的地址和类型从服务器上查询省市县数据
      */
-
     private void queryFromServer(String address,  final String type) {
         showProgressDialog();
         HttpUtil.sendOkHttpRequest(address, new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
+            //通过runOnUiThread()方法回到主线程处理逻辑
                 getActivity().runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -228,6 +235,7 @@ public class Choose_AreaFragment extends Fragment {
 
 
             @Override
+            //响应的数据会回调到onResponse()方法中
             public void onResponse(Call call, Response response) throws IOException {
                 String responseText = response.body().string();
                 boolean result = false;
